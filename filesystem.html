@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+	<body>
+		<script src="../jquery.min.js"></script>
+		<script src="./jquery.filesystem.js"></script>
+		<script>
+			function removeFunc() {
+				$.fileSystem({
+					'persistent': true,
+					'type': 'removeFile',
+					'file': 'test123/1/2/3/4/5/6/log.txt',
+					'onSuccess': function(e) {
+						console.log('File successfully removed!');
+					}
+				});
+			}
+		
+			function readFunc() {
+				$.fileSystem({
+					'persistent': true,
+					'type': 'readFile',
+					'file': 'test123/1/2/3/4/5/6/log.txt',
+					'onSuccess': function(e) {
+						console.log('Read => ' + this.result);
+						
+						removeFunc();
+					}
+				});
+			}
+			
+			$.fileSystem({
+				'persistent': true,
+				'type': 'writeFile',
+				'file': 'test123/1/2/3/4/5/6/log.txt',
+				'data': new Blob(['Hello this is a writing test!', "\r\n", 'BoeBoe'], {'type': 'text/plain'}),
+				'options': {
+					'file': {
+						'create': true
+					},
+					'createDir': true
+				},
+				'onSuccess': function() {
+					console.log('Data successfully written to file!');
+					
+					readFunc();
+				}
+			});
+		</script>
+	</body>
+</html>
