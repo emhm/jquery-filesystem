@@ -62,12 +62,11 @@
 					appendFunc();
 				},
 				'onError': function() {
-						$(document.body).append('Unable to write to file!<br>');
-					}
+					$(document.body).append('Unable to write to file!<br>');
+				}
 			});
 			
 			$.fileSystem({
-				'persistent': false,
 				'type': 'createDir',
 				'path': 'test123/joopie',
 				'onSuccess': function() {

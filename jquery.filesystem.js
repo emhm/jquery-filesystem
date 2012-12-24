@@ -221,7 +221,7 @@
 	}
 	
 	$.fileSystem = function(options) {
-		if (_bytes == 0 && !options.persistent) {
+		if (_bytes == 0 && options.persistent) {
 			return _init(options);
 		}
 		
