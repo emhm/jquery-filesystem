@@ -66,12 +66,19 @@
 			folders = folders.slice(1);
 		}
 		
+		if (folders.length < 1) {
+			return;
+		}
+		
 		dir.getDirectory(folders.shift(), {create: true}, function(dir) {
 			if (folders.length > 0) {
 				_createDir(dir, folders, cb, fs);
 			}
 			else if (cb && fs) {
 				cb(fs);
+			}
+			else if (cb) {
+				cb();
 			}
 		}, _errorCallback);
 	}
@@ -98,13 +105,23 @@
 	function _doWriteFile(options) {
 		var handleFile = function(file) {
 			file.createWriter(function(writer) {
-				writer.onwriteend = options.onSuccess;
 				writer.onerror = options.onError;
 				
-				if (options.options.append) {
-					writer.seek(writer.length);
+				if (options.options.truncateFile) {
+					writer.truncate(0);
+					
+					writer.onwriteend = function() {
+						writer.onwriteend = options.onSuccess;
+						
+						writer.write(options.data);
+					}
+					
+					return;
 				}
 				
+				writer.onwriteend = options.onSuccess;
+				
+				writer.seek(writer.length);
 				writer.write(options.data);
 			}, _errorCallback);
 		};
@@ -120,9 +137,20 @@
 		return _getFile(options, handleFile);
 	}
 	
+	function _doCreateDir(options) {
+		return function(fs) {
+			var folders = options.path.replace('\\', '/').split('/');
+			if (folders.length > 1) {
+				return _createDir(fs.root, folders, options.onSuccess);
+			}
+		
+			_createDir(fs, options.path);
+		};
+	}
+	
 	function _doAction(options) {
 		if (!options.onError) {
-			options.onError = function(e, msg) { };
+			options.onError = function() { };
 		}
 		
 		if (!options.onSuccess) {
@@ -158,24 +186,36 @@
 			else if (options.type == 'removeFile') {
 				var handleAction = _doRemoveFile(options);
 			}
+			
+			var handleFileSystem = function(fs) {
+				if (options.options.createDir) {
+					var folders = options.file.replace('\\', '/').split('/');
+					if (folders.length > 1) {
+						return _createDir(fs.root, folders.slice(0, -1), handleAction, fs);
+					}
+				}
+				
+				handleAction(fs);
+			};
 		}
 		else if (options.type == 'createDir' || options.type == 'getDir' || options.type == 'removeDir') {
+			if (options.type == 'createDir') {
+				var handleAction = _doCreateDir(options);
+			}
+			/*else if (options.type == 'getDir') {
+				var handleAction = doGetDir(options);
+			}
+			else if (options.type == 'removeDir') {
+				var handleAction = _doRemoveDir(options);
+			}*/
 			
+			var handleFileSystem = handleAction;
 		}
 		else {
 			return false;
 		}
 
-		requestFileSystem((options.persistent) ? window.PERSISTENT : window.TEMPORARY, _bytes, function(fs) {
-			if (options.options.createDir) {
-				var folders = options.file.replace('\\', '/').split('/');
-				if (folders.length > 1) {
-					return _createDir(fs.root, folders.slice(0, -1), handleAction, fs);
-				}
-			}
-			
-			handleAction(fs);
-		}, _errorCallback);
+		requestFileSystem((options.persistent) ? window.PERSISTENT : window.TEMPORARY, _bytes, handleFileSystem, _errorCallback);
 	
 		return true;
 	}

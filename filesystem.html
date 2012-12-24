@@ -1,29 +1,45 @@
 <!doctype html>
 <html>
 	<body>
-		<script src="../jquery.min.js"></script>
+		<script src="./jquery.min.js"></script>
 		<script src="./jquery.filesystem.js"></script>
 		<script>
 			function removeFunc() {
-				$.fileSystem({
+				setTimeout(function() { $.fileSystem({
 					'persistent': true,
 					'type': 'removeFile',
-					'file': 'test123/1/2/3/4/5/6/log.txt',
+					'file': 'test123/1/log.txt',
 					'onSuccess': function(e) {
-						console.log('File successfully removed!');
+						$(document.body).append('File successfully removed!<br>');
 					}
-				});
+				}) }, 1000);
 			}
 		
 			function readFunc() {
 				$.fileSystem({
 					'persistent': true,
 					'type': 'readFile',
-					'file': 'test123/1/2/3/4/5/6/log.txt',
+					'file': 'test123/1/log.txt',
 					'onSuccess': function(e) {
-						console.log('Read => ' + this.result);
+						$(document.body).append('Read => ' + this.result.replace(/\r\n/g, '<br>') + "<br>");
+						$(document.body).append('<a href="filesystem:http://192.168.10.111/persistent/test123/1/log.txt" target="_blank" onclick="removeFunc();">Show and remove file</a><br>');
+					}
+				});
+			}
+			
+			function appendFunc() {
+				$.fileSystem({
+					'persistent': true,
+					'type': 'writeFile',
+					'file': 'test123/1/log.txt',
+					'data': new Blob(["\r\n", 'Hello this is a writing test!', "\r\n", 'BoeBoe'], {'type': 'text/plain'}),
+					'onSuccess': function() {
+						$(document.body).append('Data successfully appended to file!<br>');
 						
-						removeFunc();
+						readFunc();
+					},
+					'onError': function() {
+						$(document.body).append('Unable to append to file!<br>');
 					}
 				});
 			}
@@ -31,18 +47,31 @@
 			$.fileSystem({
 				'persistent': true,
 				'type': 'writeFile',
-				'file': 'test123/1/2/3/4/5/6/log.txt',
-				'data': new Blob(['Hello this is a writing test!', "\r\n", 'BoeBoe'], {'type': 'text/plain'}),
+				'file': 'test123/1/log.txt',
+				'data': new Blob([' - How how how how merry XMASS', "\r\n", 'How how how how merry XMASS - '], {'type': 'text/plain'}),
 				'options': {
 					'file': {
 						'create': true
 					},
-					'createDir': true
+					'createDir': true,
+					'truncateFile': true
 				},
 				'onSuccess': function() {
-					console.log('Data successfully written to file!');
+					$(document.body).append('Data successfully written to file!<br>');
 					
-					readFunc();
+					appendFunc();
+				},
+				'onError': function() {
+						$(document.body).append('Unable to write to file!<br>');
+					}
+			});
+			
+			$.fileSystem({
+				'persistent': false,
+				'type': 'createDir',
+				'path': 'test123/joopie',
+				'onSuccess': function() {
+					$(document.body).append('Folder created!<br>');
 				}
 			});
 		</script>
